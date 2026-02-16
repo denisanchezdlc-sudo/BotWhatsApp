@@ -1,7 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export default async function handler(req, res) {
-  // 1. Verificación del Webhook (GET)
   if (req.method === 'GET') {
     const token = req.query['hub.verify_token'];
     const challenge = req.query['hub.challenge'];
@@ -9,25 +8,23 @@ export default async function handler(req, res) {
     return res.status(403).send('Error de token');
   }
 
-  // 2. Procesamiento de Mensajes (POST)
   if (req.method === 'POST') {
     try {
-      // Limpiamos la llave de Google por si se colaron espacios al copiarla
-      const apiKey = (process.env.GEMINI_API_KEY || "").replace(/\s/g, '');
-      const genAI = new GoogleGenerativeAI(apiKey);
+      // ⚠️ PEGA TU LLAVE AQUÍ DIRECTAMENTE (Solo para probar)
+      const apiKey = "AIzaSyDMjN2zlDjzuLedFTjMoNVzpI1gTse9Fao"; 
       
-      // Usamos el modelo sin forzar versión (la librería actualizada sabrá qué hacer)
+      const genAI = new GoogleGenerativeAI(apiKey);
       const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
       const body = req.body;
       const mensajeEntrante = body.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
 
       if (mensajeEntrante) {
-        // Generamos la respuesta
+        // 1. Obtener respuesta de Gemini
         const result = await model.generateContent(mensajeEntrante.text.body);
         const respuesta = result.response.text();
 
-        // Enviamos a WhatsApp
+        // 2. Enviar a WhatsApp
         await fetch(`https://graph.facebook.com/v22.0/996883603511093/messages`, {
           method: 'POST',
           headers: {
@@ -41,11 +38,26 @@ export default async function handler(req, res) {
           })
         });
       }
-      res.status(200).send('EVENT_RECEIVED');
+      res.status(200).send('OK');
     } catch (error) {
-      console.error("Error detallado del Bot:", error);
-      // Respondemos 200 a Facebook para que no siga reintentando el mensaje fallido
-      res.status(200).send('EVENT_RECEIVED_BUT_FAILED');
+      console.error("Error del Bot:", error);
+      // Esto hará que el bot te avise al celular si falla
+      if (req.body.entry?.[0]?.changes?.[0]?.value?.messages?.[0]) {
+         const celular = req.body.entry[0].changes[0].value.messages[0].from;
+         await fetch(`https://graph.facebook.com/v22.0/996883603511093/messages`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${process.env.TOKEN_META}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            messaging_product: "whatsapp",
+            to: celular,
+            text: { body: "🚨 Error: Mi cerebro (Google) no responde. Revisa la API Key." }
+          })
+        });
+      }
+      res.status(200).send('FALLO_INTERNO');
     }
   }
 }
