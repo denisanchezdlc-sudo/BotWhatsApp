@@ -11,7 +11,7 @@ export default async function handler(req, res) {
   if (req.method === 'POST') {
     try {
       // ⚠️ PEGA TU LLAVE AQUÍ DIRECTAMENTE (Solo para probar)
-      const apiKey = "AIzaSyDMjN2zlDjzuLedFTjMoNVzpI1gTse9Fao"; 
+      const apiKey = "AIzaSyDxk5yoKLhLLHuSgDTsoJG_DZ9jUEx4KQc"; 
       
       const genAI = new GoogleGenerativeAI(apiKey);
       const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
