@@ -24,7 +24,7 @@ export default async function handler(req, res) {
           const mensajeCliente = changes.messages[0].text.body;
           const numeroCliente = changes.messages[0].from;
 
-          const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+         const model = genAI.getGenerativeModel({ model: "gemini-pro" });
           const resultado = await model.generateContent(mensajeCliente);
           const respuestaVendedor = resultado.response.text();
 
