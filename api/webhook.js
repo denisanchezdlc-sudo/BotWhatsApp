@@ -42,7 +42,10 @@ export default async function handler(req, res) {
 
         // Variables de Meta (¡Recuerda ponerlas en las variables de entorno de Vercel!)
         // Prueba con esta sintaxis más directa si el error persiste
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+// Cambia la línea del modelo por esta:
+const model = genAI.getGenerativeModel({ 
+  model: "gemini-1.5-flash" 
+}, { apiVersion: 'v1' });
         const ID_TELEFONO = "996883603511093";
 
         await fetch(`https://graph.facebook.com/v22.0/${ID_TELEFONO}/messages`, {
