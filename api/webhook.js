@@ -11,7 +11,8 @@ export default async function handler(req, res) {
   if (req.method === 'POST') {
     try {
       const apiKey = "AIzaSyDxk5yoKLhLLHuSgDTsoJG_DZ9jUEx4KQc"; // Usa la del proyecto nuevo
-      const genAI = new GoogleGenerativeAI(apiKey);
+      // CORRECTO (Coincide con tu captura)
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
       const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
       const mensaje = req.body.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
