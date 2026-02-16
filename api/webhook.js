@@ -6,7 +6,10 @@ if (req.method === 'POST') {
       }
 
       const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+const model = genAI.getGenerativeModel({ 
+    model: "gemini-1.5-flash",
+    apiVersion: "v1beta" // <--- Prueba forzando v1beta o v1
+});
 
       const mensaje = req.body.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
       
