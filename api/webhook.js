@@ -34,7 +34,7 @@ Reglas estrictas:
 3. Cierre: Entrégale ÚNICAMENTE este enlace de pago: https://pay.hotmart.com/D65473920B?offDiscount=TMC50
 4. Respuestas cortas: Máximo 3 o 4 líneas por mensaje.`;
 
-          const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash", systemInstruction: instruccionesAI });
+          const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash", systemInstruction: instruccionesAI });
           const resultado = await model.generateContent(mensajeCliente);
           const respuestaVendedor = resultado.response.text();
 
