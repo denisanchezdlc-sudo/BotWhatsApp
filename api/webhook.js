@@ -5,29 +5,20 @@ export default async function handler(req, res) {
     const token = req.query['hub.verify_token'];
     const challenge = req.query['hub.challenge'];
     if (token === 'tmc_ventas_123') return res.status(200).send(challenge);
-    return res.status(403).send('Error de token');
+    return res.status(403).send('Error');
   }
 
   if (req.method === 'POST') {
     try {
-      // ⚠️ PEGA TU LLAVE AQUÍ DIRECTAMENTE (Solo para probar)
-      const apiKey = "AIzaSyDxk5yoKLhLLHuSgDTsoJG_DZ9jUEx4KQc"; 
-      
+      const apiKey = "AIzaSyDxk5yoKLhLLHuSgDTsoJG_DZ9jUEx4KQc"; // Usa la del proyecto nuevo
       const genAI = new GoogleGenerativeAI(apiKey);
-      // Cambia la línea del modelo por esta configuración:
-// En tu archivo api/webhook.js, intenta cambiar el modelo a uno de prueba:
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-8b" }); 
-// El modelo "8b" es más ligero y a veces tiene menos restricciones de acceso inicial.
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-      const body = req.body;
-      const mensajeEntrante = body.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
-
-      if (mensajeEntrante) {
-        // 1. Obtener respuesta de Gemini
-        const result = await model.generateContent(mensajeEntrante.text.body);
+      const mensaje = req.body.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
+      if (mensaje) {
+        const result = await model.generateContent(mensaje.text.body);
         const respuesta = result.response.text();
 
-        // 2. Enviar a WhatsApp
         await fetch(`https://graph.facebook.com/v22.0/996883603511093/messages`, {
           method: 'POST',
           headers: {
@@ -36,34 +27,15 @@ const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-8b" });
           },
           body: JSON.stringify({
             messaging_product: "whatsapp",
-            to: mensajeEntrante.from,
+            to: mensaje.from,
             text: { body: respuesta }
           })
         });
       }
-      res.status(200).send('OK');
-    } catch (error) {
-      console.error("Error:", error);
-      // ESTA LÍNEA ES CLAVE: Le dice a Facebook que no reintente más
-      res.status(200).send('EVENT_RECEIVED'); 
-    }
-      // Esto hará que el bot te avise al celular si falla
-      if (req.body.entry?.[0]?.changes?.[0]?.value?.messages?.[0]) {
-         const celular = req.body.entry[0].changes[0].value.messages[0].from;
-         await fetch(`https://graph.facebook.com/v22.0/996883603511093/messages`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${process.env.TOKEN_META}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            messaging_product: "whatsapp",
-            to: celular,
-            text: { body: "🚨 Error: Mi cerebro (Google) no responde. Revisa la API Key." }
-          })
-        });
-      }
-      res.status(200).send('FALLO_INTERNO');
+      return res.status(200).send('EVENT_RECEIVED');
+    } catch (e) {
+      console.error("Error:", e.message);
+      return res.status(200).send('EVENT_RECEIVED'); // Detiene los reintentos de Meta
     }
   }
 }
