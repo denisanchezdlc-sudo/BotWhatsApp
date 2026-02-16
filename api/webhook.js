@@ -14,7 +14,10 @@ export default async function handler(req, res) {
       const apiKey = "AIzaSyDxk5yoKLhLLHuSgDTsoJG_DZ9jUEx4KQc"; 
       
       const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }, { apiVersion: 'v1' });
+      // Cambia la línea del modelo por esta configuración:
+const model = genAI.getGenerativeModel({ 
+  model: "gemini-1.5-flash-latest" 
+});
 
       const body = req.body;
       const mensajeEntrante = body.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
@@ -40,7 +43,10 @@ export default async function handler(req, res) {
       }
       res.status(200).send('OK');
     } catch (error) {
-      console.error("Error del Bot:", error);
+      console.error("Error:", error);
+      // ESTA LÍNEA ES CLAVE: Le dice a Facebook que no reintente más
+      res.status(200).send('EVENT_RECEIVED'); 
+    }
       // Esto hará que el bot te avise al celular si falla
       if (req.body.entry?.[0]?.changes?.[0]?.value?.messages?.[0]) {
          const celular = req.body.entry[0].changes[0].value.messages[0].from;
