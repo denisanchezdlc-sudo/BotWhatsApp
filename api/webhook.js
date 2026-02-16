@@ -2,53 +2,64 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
+// Definimos la personalidad del bot
+const instruccionesSistema = `
+  Eres el asistente virtual de Corporación Macrochips, ubicada en Trujillo (Jr. Francisco Pizarro 257).
+  Tu objetivo es ser un vendedor amable, técnico y eficiente. 
+  Vendes laptops, accesorios tecnológicos y soluciones de energía solar.
+  Si no sabes un precio específico, invita al cliente a visitar la tienda o déjale el número de contacto.
+  Responde de forma breve y usa emojis para ser más cercano.
+`;
+
 export default async function handler(req, res) {
   if (req.method === 'GET') {
     const mode = req.query['hub.mode'];
     const token = req.query['hub.verify_token'];
     const challenge = req.query['hub.challenge'];
     if (mode === 'subscribe' && token === 'tmc_ventas_123') {
-      res.status(200).send(challenge);
-    } else {
-      res.status(403).send('Error');
+      return res.status(200).send(challenge);
     }
-    return;
+    return res.status(403).send('Error');
   }
 
   if (req.method === 'POST') {
     try {
       const body = req.body;
-      if (body.object === 'whatsapp_business_account') {
-        const changes = body.entry[0].changes[0].value;
-        if (changes.messages && changes.messages[0]) {
-          const mensajeCliente = changes.messages[0].text.body;
-          const numeroCliente = changes.messages[0].from;
+      const changes = body.entry?.[0]?.changes?.[0]?.value;
 
-         const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }); 
-// O usa "gemini-1.5-pro" si necesitas más potencia, pero Flash es más rápido y barato para bots.
-          const resultado = await model.generateContent(mensajeCliente);
-          const respuestaVendedor = resultado.response.text();
+      if (changes?.messages?.[0]) {
+        const mensajeCliente = changes.messages[0].text.body;
+        const numeroCliente = changes.messages[0].from;
 
-          const TOKEN_META = "EAAXslIyMy54BQjriZBurUxQMqSFJUBYAbAsvJtoZBQOqL5vCT7c2nvLX7ReBcNXOoO6AZBSzsokvQZBYXtEp8Loxg75Rh9VC80WSDyV9BaeBWfYCYUSomavZAh8R8auJx3aljEb4oLHuBISW8H7HF1LaDx6j78IgJe9tJq8w7VD22ky4YQeYLifzUgZBEvMIMpRzLWZCOqkLF66PgekZCVsx6SDaoOoZCKbPN80Sq1OvBDvHWb0CZCZBxhiy8plhuLXwMBh0YpkBWtTYwH929eEikaRqI7ZC2ZCAaDFQ3wgZDZD";
-          const ID_TELEFONO = "996883603511093";
+        // Configuramos el modelo con las instrucciones de sistema
+        const model = genAI.getGenerativeModel({ 
+          model: "gemini-1.5-flash",
+          systemInstruction: instruccionesSistema 
+        });
 
-          await fetch(`https://graph.facebook.com/v22.0/${ID_TELEFONO}/messages`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${TOKEN_META}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              messaging_product: "whatsapp",
-              to: numeroCliente,
-              text: { body: respuestaVendedor }
-            })
-          });
-        }
+        const resultado = await model.generateContent(mensajeCliente);
+        const respuestaVendedor = resultado.response.text();
+
+        // Variables de Meta (¡Recuerda ponerlas en las variables de entorno de Vercel!)
+        const TOKEN_META = process.env.TOKEN_META || "EAAXslIyMy54..."; 
+        const ID_TELEFONO = "996883603511093";
+
+        await fetch(`https://graph.facebook.com/v22.0/${ID_TELEFONO}/messages`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${TOKEN_META}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            messaging_product: "whatsapp",
+            to: numeroCliente,
+            text: { body: respuestaVendedor }
+          })
+        });
       }
       res.status(200).send('EVENT_RECEIVED');
     } catch (error) {
-      console.error("Error:", error);
+      console.error("Error detallado:", error);
       res.status(500).send('Error');
     }
   }
