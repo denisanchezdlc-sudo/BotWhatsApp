@@ -15,9 +15,9 @@ export default async function handler(req, res) {
       
       const genAI = new GoogleGenerativeAI(apiKey);
       // Cambia la línea del modelo por esta configuración:
-const model = genAI.getGenerativeModel({ 
-  model: "gemini-1.5-flash-latest" 
-});
+// En tu archivo api/webhook.js, intenta cambiar el modelo a uno de prueba:
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-8b" }); 
+// El modelo "8b" es más ligero y a veces tiene menos restricciones de acceso inicial.
 
       const body = req.body;
       const mensajeEntrante = body.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
