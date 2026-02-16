@@ -34,7 +34,7 @@ Reglas:
 3. Cierre: Da este enlace de pago: https://pay.hotmart.com/D65473920B?offDiscount=TMC50
 4. Sé breve, máximo 3 o 4 líneas.`;
 
-          const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash", systemInstruction: instruccionesAI });
+          const model = genAI.getGenerativeModel({ model: "gemini-pro", systemInstruction: instruccionesAI });
           const resultado = await model.generateContent(mensajeCliente);
           const respuestaVendedor = resultado.response.text();
 
