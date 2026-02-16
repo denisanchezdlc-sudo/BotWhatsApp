@@ -24,7 +24,8 @@ export default async function handler(req, res) {
           const mensajeCliente = changes.messages[0].text.body;
           const numeroCliente = changes.messages[0].from;
 
-         const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+         const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }); 
+// O usa "gemini-1.5-pro" si necesitas más potencia, pero Flash es más rápido y barato para bots.
           const resultado = await model.generateContent(mensajeCliente);
           const respuestaVendedor = resultado.response.text();
 
