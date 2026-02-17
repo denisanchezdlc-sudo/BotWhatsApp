@@ -17,7 +17,7 @@ export default async function handler(req, res) {
         const prompt = `Actúa como vendedor experto de la empresa TMC. Vendes el 'Manual de Ceremonias Profesional'. Precio $32 USD. Link de pago: https://pay.hotmart.com/D65473920B?offDiscount=TMC50. Sé breve. \n\nCliente dice: ${textoCliente}`;
         
         const responseIA = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${process.env.GEMINI_API_KEY}`,
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
