@@ -1,5 +1,4 @@
 export default async function handler(req, res) {
-  // 1. Verificación para Meta
   if (req.method === 'GET') {
     const token = req.query['hub.verify_token'];
     const challenge = req.query['hub.challenge'];
@@ -7,13 +6,12 @@ export default async function handler(req, res) {
     return res.status(403).send('Error');
   }
 
-  // 2. Respuesta del Bot
   if (req.method === 'POST') {
     try {
       const mensaje = req.body.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
 
       if (mensaje && mensaje.text) {
-        // Llamada a Gemini
+        // Petición directa a Google
         const responseIA = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
           {
@@ -26,7 +24,10 @@ export default async function handler(req, res) {
         );
 
         const dataIA = await responseIA.json();
-        const respuestaIA = dataIA.candidates?.[0]?.content?.parts?.[0]?.text || "No pude procesar eso.";
+        
+        if (dataIA.error) throw new Error(dataIA.error.message);
+
+        const respuestaIA = dataIA.candidates?.[0]?.content?.parts?.[0]?.text || "No hay respuesta";
 
         // Envío a WhatsApp
         await fetch(`https://graph.facebook.com/v22.0/996883603511093/messages`, {
@@ -45,7 +46,7 @@ export default async function handler(req, res) {
       }
       return res.status(200).send('EVENT_RECEIVED');
     } catch (e) {
-      console.error("Error:", e.message);
+      console.error("DETALLE DEL ERROR:", e.message);
       return res.status(200).send('EVENT_RECEIVED');
     }
   }
