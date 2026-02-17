@@ -1,3 +1,6 @@
+const LLAVE_DE_GOOGLE = "AIzaSyDxk5yoKLhLLHuSgDTsoJG_DZ9jUEx4KQc";
+const TOKEN_DE_FACEBOOK = "EAAXslIyMy54BQlPZBOom4qL4fdtOCUYFsygDuqSVSN9BHm0BW4eta2htiRpmSpaOZBI2rzEfqAZBkdPqF9DNTZBsZAJaD4wNQQrvotZBLyb2M8NPRAHlTeVsf0xQ9q4NcHFuw8qmjKbXZAhQN1seltk8fpbpnNLYde9OMPZADAwPZBtR4T2ShMMaXgYIICSVYtoZAe0CagekiRxbXS7BdRubZAEBkDBTse3e9kFpwrhNfejY5HoprXPs1iKug55xXWeBHPlQnVhicFSRyM6PJVJdyyEdal0o3DWegPsYwZDZD";
+
 export default async function handler(req, res) {
   if (req.method === 'GET') {
     const token = req.query['hub.verify_token'];
@@ -11,29 +14,29 @@ export default async function handler(req, res) {
       const mensaje = req.body.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
 
       if (mensaje && mensaje.text) {
-        // 👇 1. PEGA TU LLAVE DE GOOGLE DESPUÉS DEL SIGNO IGUAL (=) 👇
-        const responseIA = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=AIzaSyDxk5yoKLhLLHuSgDTsoJG_DZ9jUEx4KQc`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: mensaje.text.body }] }]
-            })
-          }
-        );
+        // Petición a la Inteligencia Artificial
+        const urlGoogle = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${LLAVE_DE_GOOGLE}`;
+        
+        const responseIA = await fetch(urlGoogle, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: mensaje.text.body }] }]
+          })
+        });
 
         const dataIA = await responseIA.json();
         
-        if (dataIA.error) throw new Error(dataIA.error.message);
+        if (dataIA.error) throw new Error("Google Error: " + dataIA.error.message);
 
         const respuestaIA = dataIA.candidates?.[0]?.content?.parts?.[0]?.text || "No hay respuesta";
 
-        // 👇 2. PEGA TU TOKEN DE FACEBOOK DESPUÉS DE LA PALABRA Bearer 👇
-        await fetch(`https://graph.facebook.com/v22.0/996883603511093/messages`, {
+        // Envío del mensaje a tu WhatsApp
+        const urlMeta = `https://graph.facebook.com/v22.0/996883603511093/messages`;
+        await fetch(urlMeta, {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer EAAXslIyMy54BQlPZBOom4qL4fdtOCUYFsygDuqSVSN9BHm0BW4eta2htiRpmSpaOZBI2rzEfqAZBkdPqF9DNTZBsZAJaD4wNQQrvotZBLyb2M8NPRAHlTeVsf0xQ9q4NcHFuw8qmjKbXZAhQN1seltk8fpbpnNLYde9OMPZADAwPZBtR4T2ShMMaXgYIICSVYtoZAe0CagekiRxbXS7BdRubZAEBkDBTse3e9kFpwrhNfejY5HoprXPs1iKug55xXWeBHPlQnVhicFSRyM6PJVJdyyEdal0o3DWegPsYwZDZD`,
+            'Authorization': `Bearer ${TOKEN_DE_FACEBOOK}`,
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
