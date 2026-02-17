@@ -1,26 +1,41 @@
-if (req.method === 'POST') {
+export default async function handler(req, res) {
+  // Manejo de Verificación de Facebook (GET)
+  if (req.method === 'GET') {
+    const token = req.query['hub.verify_token'];
+    const challenge = req.query['hub.challenge'];
+    if (token === 'tmc_ventas_123') return res.status(200).send(challenge);
+    return res.status(403).send('Error');
+  }
+
+  // Manejo de Mensajes Recibidos (POST)
+  if (req.method === 'POST') {
     try {
-      // 1. Verificamos que la API KEY exista antes de seguir
-      if (!process.env.GEMINI_API_KEY) {
-        throw new Error("La API KEY no está configurada en Vercel");
-      }
-
-      const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ 
-    model: "gemini-1.5-flash",
-    apiVersion: "v1beta" // <--- Prueba forzando v1beta o v1
-});
-
       const mensaje = req.body.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
-      
-      if (mensaje && mensaje.text) {
-        // 2. Llamada a Gemini
-        const result = await model.generateContent(mensaje.text.body);
-        const response = await result.response;
-        const respuesta = response.text(); 
 
-        // 3. Envío a Meta
-        const fbResponse = await fetch(`https://graph.facebook.com/v22.0/996883603511093/messages`, {
+      if (mensaje && mensaje.text) {
+        // 1. LLAMADA DIRECTA A GEMINI (SIN LIBRERÍA)
+        const responseIA = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: mensaje.text.body }] }]
+            })
+          }
+        );
+
+        const dataIA = await responseIA.json();
+
+        // Verificamos si Google devolvió un error en el JSON
+        if (dataIA.error) {
+          throw new Error(`Google Error: ${dataIA.error.message}`);
+        }
+
+        const respuesta = dataIA.candidates?.[0]?.content?.parts?.[0]?.text || "Lo siento, no pude procesar eso.";
+
+        // 2. ENVÍO A WHATSAPP (META)
+        await fetch(`https://graph.facebook.com/v22.0/996883603511093/messages`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${process.env.TOKEN_META}`,
@@ -33,14 +48,13 @@ const model = genAI.getGenerativeModel({
             text: { body: respuesta }
           })
         });
-
-        const fbData = await fbResponse.json();
-        if (fbData.error) console.error("Error de Meta:", fbData.error);
       }
-      
+
       return res.status(200).send('EVENT_RECEIVED');
     } catch (e) {
-      console.error("Error Crítico:", e.message);
-      return res.status(200).send('EVENT_RECEIVED'); 
+      // Este log aparecerá en Vercel si algo falla
+      console.error("DETALLE DEL ERROR:", e.message);
+      return res.status(200).send('EVENT_RECEIVED');
     }
+  }
 }
