@@ -11,9 +11,9 @@ export default async function handler(req, res) {
       const mensaje = req.body.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
 
       if (mensaje && mensaje.text) {
-        // Petición directa a Google
+        // 👇 1. PEGA TU LLAVE DE GOOGLE DESPUÉS DEL SIGNO IGUAL (=) 👇
         const responseIA = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=AIzaSyDxk5yoKLhLLHuSgDTsoJG_DZ9jUEx4KQc`,
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -29,11 +29,11 @@ export default async function handler(req, res) {
 
         const respuestaIA = dataIA.candidates?.[0]?.content?.parts?.[0]?.text || "No hay respuesta";
 
-        // Envío a WhatsApp
+        // 👇 2. PEGA TU TOKEN DE FACEBOOK DESPUÉS DE LA PALABRA Bearer 👇
         await fetch(`https://graph.facebook.com/v22.0/996883603511093/messages`, {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${process.env.TOKEN_META}`,
+            'Authorization': `Bearer EAAXslIyMy54BQlPZBOom4qL4fdtOCUYFsygDuqSVSN9BHm0BW4eta2htiRpmSpaOZBI2rzEfqAZBkdPqF9DNTZBsZAJaD4wNQQrvotZBLyb2M8NPRAHlTeVsf0xQ9q4NcHFuw8qmjKbXZAhQN1seltk8fpbpnNLYde9OMPZADAwPZBtR4T2ShMMaXgYIICSVYtoZAe0CagekiRxbXS7BdRubZAEBkDBTse3e9kFpwrhNfejY5HoprXPs1iKug55xXWeBHPlQnVhicFSRyM6PJVJdyyEdal0o3DWegPsYwZDZD`,
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
