@@ -13,10 +13,8 @@ export default async function handler(req, res) {
       if (mensaje && mensaje.text) {
         const textoCliente = mensaje.text.body;
         
-        // El cerebro de ventas oculto
         const promptVendedor = `Eres un experto cerrador de ventas de TMC. Vendes el 'Manual de Ceremonias Profesional'. Precio: $32 USD. Enlace de pago: https://pay.hotmart.com/D65473920B?offDiscount=TMC50. Sé amable y persuasivo.\nCliente dice: ${textoCliente}`;
 
-        // Llamada a Google usando la caja fuerte (process.env)
         const responseIA = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
           {
@@ -29,11 +27,11 @@ export default async function handler(req, res) {
         );
 
         const dataIA = await responseIA.json();
-        if (dataIA.error) throw new Error(dataIA.error.message);
+        if (dataIA.error) throw new Error("Google Error: " + dataIA.error.message);
         const respuestaIA = dataIA.candidates?.[0]?.content?.parts?.[0]?.text || "No hay respuesta";
 
-        // Envío a WhatsApp usando la caja fuerte (process.env)
-        await fetch(`https://graph.facebook.com/v22.0/996883603511093/messages`, {
+        // Envío a WhatsApp
+        const metaRes = await fetch(`https://graph.facebook.com/v22.0/996883603511093/messages`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${process.env.TOKEN_META}`,
@@ -46,6 +44,10 @@ export default async function handler(req, res) {
             text: { body: respuestaIA }
           })
         });
+
+        // 👇 ESTA ES LA ALARMA NUEVA 👇
+        const metaData = await metaRes.json();
+        console.log("Respuesta de Facebook:", JSON.stringify(metaData));
       }
       return res.status(200).send('EVENT_RECEIVED');
     } catch (e) {
