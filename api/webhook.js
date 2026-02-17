@@ -1,32 +1,28 @@
 export default async function handler(req, res) {
+  // Verificación de Meta
   if (req.method === 'GET') {
-    const token = req.query['hub.verify_token'];
-    const challenge = req.query['hub.challenge'];
-    if (token === 'tmc_ventas_123') return res.status(200).send(challenge);
+    if (req.query['hub.verify_token'] === 'tmc_ventas_123') {
+      return res.status(200).send(req.query['hub.challenge']);
+    }
     return res.status(403).send('Error');
   }
 
   if (req.method === 'POST') {
     try {
       const mensaje = req.body.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
-
       if (mensaje && mensaje.text) {
-        
-        // 👇 1. PEGA TUS DOS CLAVES AQUÍ ADENTRO DE LAS COMILLAS 👇
-        const LLAVE_DE_GOOGLE = "AIzaSyDxk5yoKLhLLHuSgDTsoJG_DZ9jUEx4KQc";
-        const TOKEN_DE_FACEBOOK = "EAAXslIyMy54BQivVCp5YkkCky31ta5Q8HVFHtD4Y5GeplKHyzKsZCd4wAlYPNNhjPLZACcteCwYFYplEsA2ZAaJX16JlDFOiIBZBpembEBXks7vPZBZAZAdjxZC6Ie16B12A4JdkDbpjGvIZC24v5fKSiV9DLEEJU0qqlir7zDDrd72CV6kqm9q5pGdZA1lzJeLf2dcYSSc0v5huj7FMDeGXZAFWh8ZC4GPjLNZC0mqxVCOBzTSZBRI2W9hAsGFNfzyZACxSFkPRtwfz2E9GtgHgbtZArHKXgdUOxJOC3jr5KwZDZD";
+        const textoCliente = mensaje.text.body;
 
-        // Petición a Gemini (Ahora con la llave oculta y segura)
+        // 1. Petición a Gemini (usando la bóveda de Vercel)
+        const prompt = `Actúa como vendedor experto de la empresa TMC. Vendes el 'Manual de Ceremonias Profesional'. Precio $32 USD. Link de pago: https://pay.hotmart.com/D65473920B?offDiscount=TMC50. Sé breve. \n\nCliente dice: ${textoCliente}`;
+        
         const responseIA = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent`,
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
           {
             method: 'POST',
-            headers: { 
-              'Content-Type': 'application/json',
-              'x-goog-api-key': LLAVE_DE_GOOGLE // <-- La llave entra segura por aquí
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              contents: [{ parts: [{ text: mensaje.text.body }] }]
+              contents: [{ parts: [{ text: prompt }] }]
             })
           }
         );
@@ -35,11 +31,11 @@ export default async function handler(req, res) {
         if (dataIA.error) throw new Error("Google Error: " + dataIA.error.message);
         const respuestaIA = dataIA.candidates?.[0]?.content?.parts?.[0]?.text || "No hay respuesta";
 
-        // Envío a WhatsApp
+        // 2. Envío a WhatsApp (usando la bóveda de Vercel)
         await fetch(`https://graph.facebook.com/v22.0/996883603511093/messages`, {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${TOKEN_DE_FACEBOOK}`,
+            'Authorization': `Bearer ${process.env.TOKEN_META}`,
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
